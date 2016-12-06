@@ -105,14 +105,14 @@ $.srandom_str_4.10.$$.random_int.100.1000$
 "chnlIds": [],
 "mosaicIds": [3942,
 3943],
-"detail": "西安村1组34号电力杆",
+"detail": "测试村1组",
 "type": 2,
 "isPlay": 0,
 "cameraId": "3121",
-"cameraName": "西安村1组34号电力杆",
+"cameraName": "测试村1组",
 "inputUrls": [
-"rtsp://admin:a12345678@10.63.237.92:554/cam/realmonitor?channel=1&subtype=1",
-"rtsp://admin:a12345678@10.63.237.92:554/cam/realmonitor?channel=1&subtype=0"]
+"rtsp://admin:1118@10.163.237.92:554/cam/realmonitor?channel=1&subtype=1",
+"rtsp://admin:111@10.163.237.92:554/cam/realmonitor?channel=1&subtype=0"]
 }]
 }
 ```
