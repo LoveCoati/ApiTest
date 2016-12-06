@@ -138,7 +138,7 @@ $.str.0.list.0.inputUrls.0.$
 
 ![data_info](img/data_info.png)
 
-## 2 ApiTest 源码的编译
+## 3 ApiTest 源码的编译
 
 ```
 pyinstaller.exe -w --onefile --icon="3.ico" smcenter_test.py
@@ -147,10 +147,10 @@ pyinstaller.exe -w --onefile --icon="3.ico" smcenter_test.py
 将源代码生成.exe文件，方便使用，首先要安装pyinstaller，前面是pyinstaller的路径。上述命令生成的.exe文件会隐藏命令窗口，看不到程序中的相关输出，若不隐藏命令窗口，则将-w换成--console即可。
 
 
-## 3 生成相关的测试报告
+## 4 生成相关的测试报告
 
 
-### 3.1 生成api的详细测试信息
+### 4.1 生成api的详细测试信息
 
 首先生成的是测试任务测试的api的详细信息，如下图所示：
 
@@ -158,7 +158,7 @@ pyinstaller.exe -w --onefile --icon="3.ico" smcenter_test.py
 
 可以通过报告看出测试的详细情况。
 
-### 3.2 生成第一个线程运行任务多次的使用时间
+### 4.2 生成第一个线程运行任务多次的使用时间
 
 这个时间图是任务多次运行后生成的。
 
