@@ -17,39 +17,39 @@ from xlutils.copy import copy as xcopy
 
 class Test:
     def __init__(self, test_info):
-        self.current_time = time.strftime( '%Y%m%d', time.localtime( time.time() ) )
-        print(self.current_time)
         self.max_time = 0
         self.quit = False
         self.insert_id = -1
         self.cookies= ""
-        self.random_str_min_len = 6
-        self.random_str_max_len = 20
         self.log_level = "DEBUG"
         self.random_int_min = 0
-        self.random_int_max = 1000000
-        self.log_levels = ["DEBUG", "INFO", "WARN", "ERROR", "FATAL"]
-        self.data_keys = ['int', 'str', 'random_int', 'random_str']
-        self.file_lock = threading.Lock()
         self.path = os.getcwd()
-        self.task_name = test_info["task_name"]
-        self.api_list = test_info["api_list"]                             # 增加的任务列表
-        self.thread_num = test_info["thread_num"]
         self.use_time_info = []
-        self.iscreat_pdf = test_info["creat_pdf"]
-        self.over_time = test_info["over_time"]
         self.overtime_count = 0
-        self.test_times = test_info["test_times"]
-        self.task_response_map = {}
         self.response_list = []
-        self.response_list_lock = threading.Lock()
-        self.init_test()
+        self.random_str_min_len = 6
+        self.task_response_map = {}
+        self.random_str_max_len = 20
+        self.random_int_max = 1000000
+        self.file_lock = threading.Lock()                                                 # 文件锁
+        self.api_list = test_info["api_list"]                                             # 增加的任务列表
+        self.task_name = test_info["task_name"]                                           # 任务名称
+        self.thread_num = test_info["thread_num"]                                         # 测试的线程数
+        self.iscreat_pdf = test_info["creat_pdf"]                                         # 是否创建PDF
+        self.over_time = test_info["over_time"]                                           # 允许接口请求的最大时间
+        self.test_times = test_info["test_times"]                                         # 接口测试的次数
+        self.response_list_lock = threading.Lock()                                        # response_list_lock
+        self.data_keys = ['int', 'str', 'random_int', 'random_str']                       # 用户设置的关键字
+        self.log_levels = ["DEBUG", "INFO", "WARN", "ERROR", "FATAL"]                     # 设置打印的级别
+        self.current_time = time.strftime( '%Y%m%d', time.localtime(time.time()))         # 获取现在的时间
         self.headers = {"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
         "Accept-Encoding":"gzip, deflate, sdch", "Cache-Control":"max-age=0","Connection":"keep-alive",
         "Accept-Language":"zh-CN,zh;q=0.8", "Upgrade-Insecure-Requests": "1" ,
         "User-Agent":"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.85 Safari/537.36"}
+        self.init_test()
 
     def init_test(self):
+        #  设置excel表格的样式
         self.style0 = xlwt.easyxf('font:height 200; align:horiz center, vert centre') #20*12pt, 水平居中
         self.style1 = xlwt.easyxf('pattern: pattern solid, fore_colour green; font: bold on;font:height 280;align:horiz center;') # 80% like
         self.style2 = xlwt.easyxf('pattern: pattern solid, fore_colour light_green;font:height 200; align:horiz center, vert centre;') #20*12pt, 水平居中
@@ -96,8 +96,8 @@ class Test:
             self.sheet.write(0, 9, "是否通过", self.style1)
             self.sheet.write(0, 10, "备注", self.style1)
             self.count = 0
-
-
+ 
+    # 随机生成字符串
     def random_str(self):
         char = [
                 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 
@@ -105,12 +105,12 @@ class Test:
                 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 
                 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 
                 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8',
-                '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
+                '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '&',
+                '!', '~', '@', '%', '^', '*', '(', ')', '-', '_', '+', '='
                 ]
-        #随机生成字符串#
         random_data = ""
-        if self.random_str_max_len > 40:
-            self.random_str_max_len = 40
+        if self.random_str_max_len > 10000:
+            self.random_str_max_len = 10000
         if self.random_str_min_len < 1:
             self.random_str_min_len = 1
         n = random.randint(self.random_str_min_len, self.random_str_max_len + 1) 
@@ -119,6 +119,7 @@ class Test:
             random_data = random_data + char[m]
         return random_data
 
+    # 获取上一个接口返回的数据
     def get_data(self, post_data, api_id):
         change_data_list = []
         match = re.compile(r'\$.*?\$')
@@ -166,7 +167,6 @@ class Test:
                         if index >= api_id:
                             continue
                         if index >= 0 and index <= len(self.api_list):
-                            print(self.api_list[index]["response"])
                             api_data = self.api_list[index]["response"]
                             for index_data in data_list[3:-1]:
                                 if isinstance(api_data, dict):
@@ -197,32 +197,60 @@ class Test:
                         self.write_log("get data error ", 'main'+ str(data), "INFO")
         return post_data
 
-
+    # 工作函数
     def task_work(self, index):
         count = 0
+        # 循环测试多次
         while count < self.test_times and not self.quit:
             start_stamp = time.time()*1000
             response_data = {}
-            print(self.api_list)
+            self.write_log(str(self.api_list), str(index), "DEBUG")
+            # 从任务列表中取出任务
             for task in self.api_list:
                 response_data = {}
-                task["request_id"] = str(task["request_id"])
+                task["request_id"] = str(task["request_id"])                                              # 任务的id补充为3位
                 if len(task["request_id"]) < 3:
-                    for index in range(3 - len(task["request_id"])):
+                    for t in range(3 - len(task["request_id"])):
                         task["request_id"] = '0' + task["request_id"]
-                print('*'*40 + '\n', task, '\n' + '*'*40)
+                self.write_log('*'*40 + '\n' + str(task) + '\n' + '*'*40, str(index), "DEBUG")
                 task_index = self.api_list.index(task)
                 post_data = task["data"]
-                if int(task["method"]) == 0:
+                # 发送请求
+                if int(task["method"]) == 0:                                             # post请求
                     self.write_log(json.dumps(task["data"], ensure_ascii=False), str(index), "DEBUG")
                     post_data = self.get_data(json.dumps(task["data"],  ensure_ascii=False), task_index)
                     self.write_log('post_data' + str(post_data) + '\n\n', str(index), "DEBUG")
-                    # os.system('pause')
-                    # print(post_data)
                     try:
                         response = requests.post(url = task["url"], data = post_data.encode('utf-8'), headers=self.headers, cookies = self.cookies)
                         self.cookies = response.cookies
+                        if index == 0:
+                            response_data["id"] = count
+                            response_data["status_code"] = str(response.status_code)
+                            response_data["url"] = task["url"]
+                            response_data["name"] = task["name"]
+                            response_data["method"] = "POST"
+                            response_data["from_data"] = post_data
+                            response_data["error_info"] = "  "
+                            response_data["promising_results"] = task["promising_results"]
+                            response_data["request_id"] = task["request_id"]
+                        if response.status_code != 200:
+                            if index == 0:
+                                response_data["response"] = ""
+                                self.response_list.append(response_data)
+                                self.api_list[task_index]["response"] = ""
+                            break
+                        else:
+                            if index == 0:
+                                response_data["response"] = response.text
+                                self.response_list.append(response_data)
+                                try:
+                                    response = json.loads(response.text)
+                                    print('response ' + '*'*40 + '\n', response, '\n' + '*'*40, task_index)
+                                    self.api_list[task_index]["response"] = response
+                                except:
+                                    self.api_list[task_index]["response"] = response.text
                     except Exception as error_info:
+                        print("Exception--->> ", str(error_info))
                         if index == 0:
                             response_data["id"] = count
                             response_data["status_code"] = 'error'
@@ -235,34 +263,9 @@ class Test:
                             response_data["promising_results"] = task["promising_results"]
                             response_data["request_id"] = task["request_id"]
                             self.response_list.append(response_data)
+                            self.api_list[task_index]["response"] = ""
                         self.write_log(str(error_info) + '\n\n', str(index), "DEBUG")
                         break
-                    if index == 0:
-                        response_data["id"] = count
-                        response_data["status_code"] = str(response.status_code)
-                        response_data["url"] = task["url"]
-                        response_data["name"] = task["name"]
-                        response_data["method"] = "POST"
-                        response_data["from_data"] = post_data
-                        response_data["error_info"] = "  "
-                        response_data["promising_results"] = task["promising_results"]
-                        response_data["request_id"] = task["request_id"]
-                        print(response.status_code)
-                    if response.status_code != 200:
-                        if index == 0:
-                            response_data["response"] = ""
-                            self.response_list.append(response_data)
-                        break
-                    else:
-                        if index == 0:
-                            response_data["response"] = response.text
-                            self.response_list.append(response_data)
-                            try:
-                                response = json.loads(response.text)
-                                print('response ' + '*'*40 + '\n', response, '\n' + '*'*40, task_index)
-                                self.api_list[task_index]["response"] = response
-                            except:
-                                self.api_list[task_index]["response"] = response.text
                 else:
                     try:
                         payload =self.get_data(str(task["data"]), task_index)
@@ -272,7 +275,35 @@ class Test:
                         else:
                             response = requests.get(task["url"], headers=self.headers, cookies = self.cookies)
                         self.cookies = response.cookies
+                        print(response.url)
+                        if index == 0:
+                            response_data["id"] = count
+                            response_data["status_code"] = str(response.status_code)
+                            response_data["url"] = task["url"]
+                            response_data["name"] = task["name"]
+                            response_data["method"] = "GET"
+                            response_data["from_data"] = payload
+                            response_data["error_info"] = "成功"
+                            response_data["promising_results"] = task["promising_results"]
+                            response_data["request_id"] = task["request_id"]
+                        if response.status_code != 200:
+                            if index == 0:
+                                response_data["response"] = ""
+                                self.response_list.append(response_data)
+                                self.api_list[task_index]["response"] = ""
+                            break
+                        else:
+                            if index == 0:
+                                response_data["response"] = response.text
+                                try:
+                                    data = json.loads(response.text)
+                                    print('response ' + '*'*40 + '\n', data, '\n' + '*'*40, task_index)
+                                    self.api_list[task_index]["response"] = data
+                                except:
+                                    self.api_list[task_index]["response"] = response.text
+                                self.response_list.append(response_data)
                     except Exception as error_info:
+                        print("Exception--->> ", str(error_info))
                         if index == 0:
                             response_data["id"] = count
                             response_data["status_code"] = 'error'
@@ -285,34 +316,9 @@ class Test:
                             response_data["promising_results"] = task["promising_results"]
                             response_data["request_id"] = task["request_id"]
                             self.response_list.append(response_data)
+                            self.api_list[task_index]["response"] = ""
                         self.write_log(str(error_info) + '\n\n', str(index), "DEBUG")
                         break
-                    print(response.url)
-                    if index == 0:
-                        response_data["id"] = count
-                        response_data["status_code"] = str(response.status_code)
-                        response_data["url"] = task["url"]
-                        response_data["name"] = task["name"]
-                        response_data["method"] = "GET"
-                        response_data["from_data"] = payload
-                        response_data["error_info"] = "成功"
-                        response_data["promising_results"] = task["promising_results"]
-                        response_data["request_id"] = task["request_id"]
-                    if response.status_code != 200:
-                        if index == 0:
-                            response_data["response"] = ""
-                            self.response_list.append(response_data)
-                        break
-                    else:
-                        if index == 0:
-                            response_data["response"] = response.text
-                            try:
-                                data = json.loads(response.text)
-                                print('response ' + '*'*40 + '\n', data, '\n' + '*'*40, task_index)
-                                self.api_list[task_index]["response"] = data
-                            except:
-                                self.api_list[task_index]["response"] = response.text
-                            self.response_list.append(response_data)
             end_stamp = time.time()*1000
             wait_time = end_stamp - start_stamp
             if index == 0:
@@ -332,6 +338,7 @@ class Test:
         print("end thread: ", index)
         time.sleep(0.3)
 
+    # 开始线程
     def start(self):
         threads = []
         self.use_time_info = []
@@ -347,7 +354,7 @@ class Test:
         os.chdir(self.path)
         print("任务结束")
 
-
+    # 数据写入excel
     def write_csv(self):
         for index in range(len(self.response_list)):
             info = self.response_list[index]
@@ -387,6 +394,7 @@ class Test:
         self.sheet.write(total_num + 3, 9, "通过率：" + str3, self.style6)
         self.workbook.save(self.task_name + "-" + self.current_time+".xls")
 
+    # 创建PDF
     def creat_pdf(self):
         fig = plt.figure(1)                                                   # 创建图表1
         ax1 = plt.subplot(111)                                                # 创建子图1
@@ -402,7 +410,9 @@ class Test:
         plt.cla()
         print("creat pdf end")
 
+    # 写入日志文件
     def write_log(self, message, thread_id, log_level):
+        message = str(message)
         time_stamp = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
         data = '[' + str(thread_id) + ']  ' + time_stamp +  '  [' + log_level + ']   ' + message + '\n'
         if self.log_levels.index(log_level) < self.log_levels.index(self.log_level):
@@ -641,10 +651,8 @@ class Main:
                 self.cv_left.delete(index)
         self.cv_left.create_window(230,15, anchor=NW, window=self.labe_task_name)
         self.cv_left.create_window(320,15, anchor=NW, window=self.entry_task_name)
-
         self.cv_left.create_window(560,15, anchor=NW, window=self.labe_over_time)
         self.cv_left.create_window(650,15, anchor=NW, window=self.entry_over_time)
-
         self.cv_left.create_window(230,45, anchor=NW, window=self.labe_test_times)
         self.cv_left.create_window(320,45, anchor=NW, window=self.entry_test_times)
         self.cv_left.create_window(560,45, anchor=NW, window=self.labe_thread_num)
