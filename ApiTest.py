@@ -50,13 +50,6 @@ class Test:
         "User-Agent":"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.85 Safari/537.36"}
 
     def init_test(self):
-        # pdf_path = os.path.join(self.path, self.task_name)
-        # if not os.path.exists(pdf_path):
-        #     os.mkdir(pdf_path)
-        # os.chdir(pdf_path)
-        # if not os.path.exists(self.task_name):
-        #     file = open(self.task_name+'.log', 'w') 
-        #     file.close()
         self.style0 = xlwt.easyxf('font:height 200; align:horiz center, vert centre') #20*12pt, 水平居中
         self.style1 = xlwt.easyxf('pattern: pattern solid, fore_colour green; font: bold on;font:height 280;align:horiz center;') # 80% like
         self.style2 = xlwt.easyxf('pattern: pattern solid, fore_colour light_green;font:height 200; align:horiz center, vert centre;') #20*12pt, 水平居中
@@ -213,6 +206,10 @@ class Test:
             print(self.api_list)
             for task in self.api_list:
                 response_data = {}
+                task["request_id"] = str(task["request_id"])
+                if len(task["request_id"]) < 3:
+                    for index in range(3 - len(task["request_id"])):
+                        task["request_id"] = '0' + task["request_id"]
                 print('*'*40 + '\n', task, '\n' + '*'*40)
                 task_index = self.api_list.index(task)
                 post_data = task["data"]
@@ -327,7 +324,7 @@ class Test:
             count += 1
         if index == 0 and self.task_name != 'task_api_test':
             self.write_csv()
-        if index == 0:
+        if index == 0 and int(self.test_times) > 1:
             self.write_log("creat pdf", str(index), "DEBUG")
             self.creat_pdf()
         else:
@@ -412,8 +409,15 @@ class Test:
             return
         print(data)
         self.file_lock.acquire()
-        with open(self.task_name+'.log', 'a') as file:
+        old_path = os.getcwd()
+        new_path = os.path.join(old_path, "log")
+        if not os.path.exists(new_path):
+            os.mkdir(new_path)
+        os.chdir(new_path)
+        path = os.path.join(new_path, self.task_name+'.log')
+        with open(path, 'a') as file:
             file.write(data)
+        os.chdir(old_path)
         self.file_lock.release()
 
 
@@ -425,6 +429,7 @@ class Main:
         self.path = os.getcwd()
         self.refresh_id = 0
         self.task_response_list = []
+        self.log_path = "log"
         self.config_path = 'config'
         self.taks_start_flag = False
         self.config_file_list = []                                                       # 存储任务文件
@@ -445,7 +450,7 @@ class Main:
         self.font = ('宋体', 12)
         self.title = ""                                                                  # 窗口标题
         self.size = ""                                                                   # 窗口大小
-        self.width =800                                                                  # 窗口宽
+        self.width =1000                                                                 # 窗口宽
         self.height = 600                                                                # 窗口高
         self.root.resizable(False, False)                                                # 禁止改变窗口大小
         self.url_value = StringVar()
@@ -456,9 +461,9 @@ class Main:
         self.request_name_value = StringVar()
         self.request_result_value = StringVar()
         self.request_id_value = StringVar()
-        self.cv_left = Canvas(self.root, height=600, width=800, bg=self.background)
-        self.cv_task = Canvas(self.root, height=450, width=580, scrollregion=(0,0,210,2100), bg=self.background)
-        self.api_list = Listbox(self.root, height=23, width = 60, bg= self.background, fg = self.foreground, font=("宋体, 14"))
+        self.cv_left = Canvas(self.root, height=600, width=1000, bg=self.background)
+        self.cv_task = Canvas(self.root, height=450, width=1000, scrollregion=(0,0,210,2100), bg=self.background)
+        self.api_list = Listbox(self.root, height=23, width = 79, bg= self.background, fg = self.foreground, font=("宋体, 14"))
         self.scrollbar = Scrollbar(self.root,orient='vertical')
         self.api_list["yscrollcommand"] = self.scrollbar.set
         self.scrollbar["command"]=self.api_list.yview
@@ -471,10 +476,13 @@ class Main:
         self.scrollbar_task["command"]=self.list_task_list.yview
         self.list_task_list.bind('<Double-Button-1>', self.show_task_response_info)
 
-        self.list_request_list = Listbox(self.root, height=27, width = 28, bg= self.background, fg = self.foreground, font=("宋体, 14"))
+        self.list_request_list = Listbox(self.root, height=27, width = 48, bg= self.background, fg = self.foreground, font=("宋体, 14"))
         self.scrollbar_request = Scrollbar(self.root,orient='vertical')
         self.list_request_list["yscrollcommand"] = self.scrollbar_request.set
         self.scrollbar_request["command"]=self.list_request_list.yview
+        self.scrollbar_request_x = Scrollbar(self.root,orient='horizontal')
+        self.list_request_list["xscrollcommand"] = self.scrollbar_request_x.set
+        self.scrollbar_request_x["command"]=self.list_request_list.xview
         self.list_request_list.bind('<Double-Button-1>', self.show_api_request_info)
 
         self.button_creat_task = Button(self.root, text="新建测试任务", width=25, command = self.show_add_task)
@@ -483,13 +491,13 @@ class Main:
         print(self.button_task_list.keys())
 
         self.labe_task_name = Label(self.root, width=20, text="任务名称:", foreground = self.foreground, background=self.background, font=self.font)
-        self.entry_task_name = Entry(self.root, width=25, textvariable = self.task_name_value)
+        self.entry_task_name = Entry(self.root, width=30, textvariable = self.task_name_value)
         self.labe_over_time = Label(self.root, width=20, text="超时时间:", foreground = self.foreground, background=self.background, font=self.font)
-        self.entry_over_time = Entry(self.root, width=25, textvariable = self.over_time_value)
+        self.entry_over_time = Entry(self.root, width=30, textvariable = self.over_time_value)
         self.labe_test_times = Label(self.root, width=20, text="测试次数:", foreground = self.foreground, background=self.background, font=self.font)
-        self.entry_test_times = Entry(self.root, width=25, textvariable = self.test_times_value)
+        self.entry_test_times = Entry(self.root, width=30, textvariable = self.test_times_value)
         self.labe_thread_num = Label(self.root, width=20, text="线程数量:", foreground = self.foreground, background=self.background, font=self.font)
-        self.entry_thread_num = Entry(self.root, width=25, textvariable = self.thread_num_value)
+        self.entry_thread_num = Entry(self.root, width=30, textvariable = self.thread_num_value)
 
         self.button_add = Button(self.root, text="添加请求", width=8, command = self.add_api)
         self.button_read = Button(self.root, text="打开任务", width=8, command = self.read_task)
@@ -497,9 +505,9 @@ class Main:
         self.button_save_task = Button(self.root, text="添加到任务列表", width=14, command = self.save_task)
         self.button_show_request = Button(self.root, text="刷新列表", width=8, command=lambda : self.refresh_request_list(self.refresh_id))
         self.label_url = Label(self.root, width=20, text="请求地址:", foreground = self.foreground, background=self.background, font=self.font)
-        self.entry_url = Entry(self.root, width=60, textvariable = self.url_value)
+        self.entry_url = Entry(self.root, width=77, textvariable = self.url_value)
         self.label_request_name = Label(self.root, width=20, text="请求说明:", foreground = self.foreground, background=self.background, font=self.font)
-        self.entry_request_name = Entry(self.root, width=60, textvariable = self.request_name_value)
+        self.entry_request_name = Entry(self.root, width=77, textvariable = self.request_name_value)
         self.method_value = IntVar()
         self.method_value.set(0)
         self.label_method = Label(self.root, width=20, text="请求方式:", foreground = self.foreground, background=self.background, font=self.font)
@@ -507,12 +515,12 @@ class Main:
         self.radio_button_get = Radiobutton(self.root,variable = self.method_value,text = 'GET',value = 1, command=self.select_method_get)
         self.label_input = Label(self.root, width=20, text="添加参数:", foreground = self.foreground, background=self.background, font=self.font)
         self.label_output = Label(self.root, width=20, text="返回数据:", foreground = self.foreground, background=self.background, font=self.font)
-        self.entry_result = Entry(self.root, width=60, textvariable = self.request_result_value )
+        self.entry_result = Entry(self.root, width=77, textvariable = self.request_result_value )
         self.label_result = Label(self.root, width=10, text="预期结果:", foreground = self.foreground, background=self.background, font=self.font)
-        self.entry_id = Entry(self.root, width=60, textvariable = self.request_id_value )
+        self.entry_id = Entry(self.root, width=77, textvariable = self.request_id_value )
         self.label_id = Label(self.root, width=10, text="请求ID:", foreground = self.foreground, background=self.background, font=self.font)
-        self.text_input = Text(self.root, width=42, height=10, font=("宋体",14))
-        self.text_output = Text(self.root, width=42, height=10, font=("宋体",14))
+        self.text_input = Text(self.root, width=54, height=10, font=("宋体",14))
+        self.text_output = Text(self.root, width=54, height=10, font=("宋体",14))
         self.button_add_api_test_ok = Button(self.root, width=20, text="发送", command=self.add_api_test_ok)
         self.button_add_api_ok = Button(self.root, width=10, text="确定", command=self.add_api_ok)
         self.button_add_api_cancle = Button(self.root, width=10, text="取消", command=self.add_api_cancle)
@@ -538,6 +546,9 @@ class Main:
             self.config_path = os.path.join(self.path, self.config_path)
             if not os.path.exists(self.config_path):
                 os.mkdir(self.config_path)
+            self.log_path = os.path.join(self.path, self.log_path)
+            if not os.path.exists(self.log_path):
+                os.mkdir(self.log_path)
         except Exception as error:
             print(error)
 
@@ -597,10 +608,6 @@ class Main:
                 print(str(self.task_list[index]["task_id"]) + "  任务结束")
                 self.show_task_list(-1)
 
-
-
-
-
     def init_window(self):
         self.title = "接口测试程序"
         screenwidth = self.root.winfo_screenwidth()
@@ -632,22 +639,22 @@ class Main:
                 self.cv_task.delete(index)
             for index in self.cv_left.find_all()[4::]:
                 self.cv_left.delete(index)
-        self.cv_left.create_window(220,15, anchor=NW, window=self.labe_task_name)
-        self.cv_left.create_window(310,15, anchor=NW, window=self.entry_task_name)
+        self.cv_left.create_window(230,15, anchor=NW, window=self.labe_task_name)
+        self.cv_left.create_window(320,15, anchor=NW, window=self.entry_task_name)
 
-        self.cv_left.create_window(520,15, anchor=NW, window=self.labe_over_time)
-        self.cv_left.create_window(600,15, anchor=NW, window=self.entry_over_time)
+        self.cv_left.create_window(560,15, anchor=NW, window=self.labe_over_time)
+        self.cv_left.create_window(650,15, anchor=NW, window=self.entry_over_time)
 
-        self.cv_left.create_window(220,45, anchor=NW, window=self.labe_test_times)
-        self.cv_left.create_window(310,45, anchor=NW, window=self.entry_test_times)
-        self.cv_left.create_window(520,45, anchor=NW, window=self.labe_thread_num)
-        self.cv_left.create_window(600,45, anchor=NW, window=self.entry_thread_num)
-        self.cv_left.create_line(205,98,800,98,width=5, fill=self.foreground)
+        self.cv_left.create_window(230,45, anchor=NW, window=self.labe_test_times)
+        self.cv_left.create_window(320,45, anchor=NW, window=self.entry_test_times)
+        self.cv_left.create_window(560,45, anchor=NW, window=self.labe_thread_num)
+        self.cv_left.create_window(650,45, anchor=NW, window=self.entry_thread_num)
+        self.cv_left.create_line(205,98,1000,98,width=5, fill=self.foreground)
         self.cv_left.create_window(220,105, anchor=NW, window=self.button_add)
         self.cv_left.create_window(300,105, anchor=NW, window=self.button_save)
         self.cv_left.create_window(380,105, anchor=NW, window=self.button_read)
         self.cv_left.create_window(460,105, anchor=NW, window=self.button_save_task)
-        self.cv_left.create_line(205,140,800,140,width=5, fill=self.foreground)
+        self.cv_left.create_line(205,140,1000,140,width=5, fill=self.foreground)
         self.cv_left.create_window(210,145,anchor=NW, window=self.cv_task)
         self.show_api_list(-1)
 
@@ -669,21 +676,21 @@ class Main:
         # 清空画布上的组件
         for index in self.cv_task.find_all():
             self.cv_task.delete(index)
-        self.cv_task.create_window(10,15,anchor=NW, window=self.label_id)
-        self.cv_task.create_window(100,15,anchor=NW, window=self.entry_id)
-        self.cv_task.create_window(10,45,anchor=NW, window=self.label_request_name)
-        self.cv_task.create_window(100,45,anchor=NW, window=self.entry_request_name)
-        self.cv_task.create_window(10,75,anchor=NW, window=self.label_url)
-        self.cv_task.create_window(100,75,anchor=NW, window=self.entry_url)
-        self.cv_task.create_window(10,115,anchor=NW, window=self.label_result)
-        self.cv_task.create_window(100,115,anchor=NW, window=self.entry_result)        
-        self.cv_task.create_window(10,155,anchor=NW, window=self.label_method)
-        self.cv_task.create_window(100,155,anchor=NW, window=self.radio_button_post)
+        self.cv_task.create_window(20,15,anchor=NW, window=self.label_id)
+        self.cv_task.create_window(110,15,anchor=NW, window=self.entry_id)
+        self.cv_task.create_window(20,45,anchor=NW, window=self.label_request_name)
+        self.cv_task.create_window(110,45,anchor=NW, window=self.entry_request_name)
+        self.cv_task.create_window(20,75,anchor=NW, window=self.label_url)
+        self.cv_task.create_window(110,75,anchor=NW, window=self.entry_url)
+        self.cv_task.create_window(20,115,anchor=NW, window=self.label_result)
+        self.cv_task.create_window(110,115,anchor=NW, window=self.entry_result)        
+        self.cv_task.create_window(20,155,anchor=NW, window=self.label_method)
+        self.cv_task.create_window(110,155,anchor=NW, window=self.radio_button_post)
         self.cv_task.create_window(180,155,anchor=NW, window=self.radio_button_get)
-        self.cv_task.create_window(10,195,anchor=NW, window=self.label_input)
-        self.cv_task.create_window(100,195,anchor=NW, window=self.text_input)
-        self.cv_task.create_window(350,400,anchor=NW, window=self.button_add_api_ok)
-        self.cv_task.create_window(440,400,anchor=NW, window=self.button_add_api_cancle)
+        self.cv_task.create_window(20,195,anchor=NW, window=self.label_input)
+        self.cv_task.create_window(110,195,anchor=NW, window=self.text_input)
+        self.cv_task.create_window(480,400,anchor=NW, window=self.button_add_api_ok)
+        self.cv_task.create_window(570,400,anchor=NW, window=self.button_add_api_cancle)
 
     def add_api_test(self):
         self.method = 0
@@ -705,7 +712,7 @@ class Main:
         self.cv_left.create_window(310,75,anchor=NW, window=self.text_input)
         self.cv_left.create_window(220,300, anchor=NW, window=self.label_output)
         self.cv_left.create_window(310,300,anchor=NW, window=self.text_output)
-        self.cv_left.create_window(580, 510, anchor=NW, window=self.button_add_api_test_ok)
+        self.cv_left.create_window(700, 510, anchor=NW, window=self.button_add_api_test_ok)
 
     def add_api_test_ok(self):
         api_data = {}
@@ -889,9 +896,9 @@ class Main:
         for index in range(len(self.api_info)):
             self.api_list.insert(END, "API-" + str(index)+ "-" + self.api_info[index]["url"])
         self.cv_task.create_window(0,0, anchor=NW, window=self.api_list)
-        self.cv_task.create_window(570,0 , anchor=NW, window=self.scrollbar, height=450)
+        self.cv_task.create_window(772,0 , anchor=NW, window=self.scrollbar, height=453)
 
-
+# 
     def show_api_info_and_edit(self, event):
         if len(self.api_list.curselection()) == 0:
             return
@@ -989,13 +996,14 @@ class Main:
         for index in range(len(self.task_list)):
             task = self.task_list[index]
             self.list_task_list.insert(END, 'TASK-' + str(task["task_id"]) + '.'+ self.task_status[task["status"]] + ' ' + task["task_name"])
-        self.cv_left.create_line(205,3,800,3,width=5, fill=self.foreground)
-        self.cv_left.create_line(205,50,800,50,width=5, fill=self.foreground)
+        self.cv_left.create_line(205,3,1000,3,width=5, fill=self.foreground)
+        self.cv_left.create_line(205,50,1000,50,width=5, fill=self.foreground)
         self.cv_left.create_line(490,0,490,50,width=16, fill=self.foreground)
         self.cv_left.create_window(206,54, anchor=NW, window=self.list_task_list)
         self.cv_left.create_window(482,54 , anchor=NW, window=self.scrollbar_task, height=550)
         self.cv_left.create_window(500,54, anchor=NW, window=self.list_request_list)
-        self.cv_left.create_window(782,54 , anchor=NW, window=self.scrollbar_request, height=550)
+        self.cv_left.create_window(984,54 , anchor=NW, window=self.scrollbar_request, height=550)
+        self.cv_left.create_window(500,580 , anchor=NW, window=self.scrollbar_request_x, width=484)
         if self.taks_start_flag:
             self.cv_left.create_window(215,15,anchor=NW, window=self.button_task_pause)
         else:
@@ -1016,7 +1024,7 @@ class Main:
             return
         self.task_response_list = self.threads_class[index].response_list
         for index in range(len(self.task_response_list)):
-            self.list_request_list.insert(END, 'API-' + self.task_response_list[index]["status_code"] + '-' + self.task_response_list[index]["name"] )
+            self.list_request_list.insert(END, 'API-' + self.task_response_list[index]["request_id"] +"-[" + self.task_response_list[index]["status_code"] + ']-' + self.task_response_list[index]["name"] )
 
     def refresh_request_list(self, index):
         self.task_response_list = []
@@ -1025,7 +1033,7 @@ class Main:
             return
         self.task_response_list = self.threads_class[index].response_list
         for index in range(len(self.task_response_list)):
-            self.list_request_list.insert(END, 'API-' + self.task_response_list[index]["status_code"] + '-' + self.task_response_list[index]["name"] )
+            self.list_request_list.insert(END, 'API-' + self.task_response_list[index]["request_id"] +"-[" + self.task_response_list[index]["status_code"] + ']-' + self.task_response_list[index]["name"] )
         
 
     def write_task(self):                                         # 将任务保存到文件
@@ -1089,6 +1097,8 @@ class Main:
         print("save file")
         file_name = self.entry_save_file_name.get()
         os.chdir(self.config_path)
+        if os.path.splitext(file_name)[1] != ".txt":
+            showinfo(title='错误提示', message="保存文件名是txt")
         with open(file_name, 'w') as file:
             file.write(json.dumps(task_info, ensure_ascii =False))
         self.save_file_window.destroy()
@@ -1097,7 +1107,7 @@ class Main:
         self.config_file_list = []
         os.chdir(self.config_path)
         for item in os.listdir(self.config_path):
-            if os.path.isfile(item):
+            if os.path.isfile(item) and os.path.splitext(item)[1] == ".txt":
                 self.config_file_list.append(item)
         if len(self.config_file_list) == 0:
             showinfo(title='错误提示', message="没有可以加载的文件")
