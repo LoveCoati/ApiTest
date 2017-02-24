@@ -578,7 +578,6 @@ class Main:
         self.th.start()
 
     def run_thread(self, list):                        # 任务线程
-
         while True:
             flag = False
             task = {}
@@ -595,6 +594,7 @@ class Main:
                     if self.run_task_list[index]["status"] == 1:
                         task = self.run_task_list[index]
                         flag = True
+                        print(len(self.run_task_list))
                         break
                 self.run_task_list_lock.release()
                 if not flag:
@@ -602,6 +602,7 @@ class Main:
                         self.taks_start_flag = False
                         self.cv_left.create_window(215,15,anchor=NW, window=self.button_task_start)
                         self.show_task_list(-1)
+                        self.refresh_request_list(0)    # 显示第一个任务的请求值
                     continue
                 test_work = Test(task)
                 self.threads_class.append(test_work)
@@ -994,7 +995,7 @@ class Main:
         for index in self.cv_task.find_all():
             self.cv_task.delete(index)
             print("task"+ str(index))
-        print("---------", self.cv_left.find_all())
+        print("show_task_list---------", self.cv_left.find_all())
         for index in self.cv_left.find_all()[4::]:
             self.cv_left.delete(index)
             print("api"+ str(index))
