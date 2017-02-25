@@ -556,7 +556,7 @@ class Main:
             self.config_path = os.path.join(self.path, self.config_path)
             if not os.path.exists(self.config_path):
                 os.mkdir(self.config_path)
-            self.log_path = os.path.join(self.path, self.log_path)
+            self.log_path = os.path.join(self.config_path, self.log_path)
             if not os.path.exists(self.log_path):
                 os.mkdir(self.log_path)
         except Exception as error:
