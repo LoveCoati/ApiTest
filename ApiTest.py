@@ -224,7 +224,7 @@ class Test:
                         response = requests.post(url = task["url"], data = post_data.encode('utf-8'), headers=self.headers, cookies = self.cookies)
                         self.cookies = response.cookies
                         if index == 0:
-                            response_data["id"] = count
+                            response_data["id"] = task["id"]
                             response_data["status_code"] = str(response.status_code)
                             response_data["url"] = task["url"]
                             response_data["name"] = task["name"]
@@ -252,7 +252,7 @@ class Test:
                     except Exception as error_info:
                         print("Exception--->> ", str(error_info))
                         if index == 0:
-                            response_data["id"] = count
+                            response_data["id"] = task["id"]
                             response_data["status_code"] = 'error'
                             response_data["url"] = task["url"]
                             response_data["method"] = "POST"
@@ -277,7 +277,7 @@ class Test:
                         self.cookies = response.cookies
                         print(response.url)
                         if index == 0:
-                            response_data["id"] = count
+                            response_data["id"] = task["id"]
                             response_data["status_code"] = str(response.status_code)
                             response_data["url"] = task["url"]
                             response_data["name"] = task["name"]
@@ -305,7 +305,7 @@ class Test:
                     except Exception as error_info:
                         print("Exception--->> ", str(error_info))
                         if index == 0:
-                            response_data["id"] = count
+                            response_data["id"] = task["id"]
                             response_data["status_code"] = 'error'
                             response_data["url"] = task["url"]
                             response_data["method"] = "GET"
@@ -591,7 +591,7 @@ class Main:
             if len(self.run_task_list) > 0:
                 self.run_task_list_lock.acquire()
                 for index in range(len(self.run_task_list)):
-                    if self.run_task_list[index]["status"] == 1:
+                    if self.run_task_list[index]["status"] == 1 and self.taks_start_flag:
                         task = self.run_task_list[index]
                         flag = True
                         print(len(self.run_task_list))
@@ -1031,9 +1031,11 @@ class Main:
         self.list_request_list.delete(0, END)
         if len(self.threads_class) == 0:
             return
+        elif len(self.threads_class) - 1 < index:
+            return
         self.task_response_list = self.threads_class[index].response_list
         for index in range(len(self.task_response_list)):
-            self.list_request_list.insert(END, 'API-' + self.task_response_list[index]["request_id"] +"-[" + self.task_response_list[index]["status_code"] + ']-' + self.task_response_list[index]["name"] )
+            self.list_request_list.insert(END, 'API-' + str(self.task_response_list[index]["id"]) +"-[" + self.task_response_list[index]["status_code"] + ']-' + self.task_response_list[index]["name"] )
 
     def refresh_request_list(self, index):
         self.task_response_list = []
@@ -1042,7 +1044,7 @@ class Main:
             return
         self.task_response_list = self.threads_class[index].response_list
         for index in range(len(self.task_response_list)):
-            self.list_request_list.insert(END, 'API-' + self.task_response_list[index]["request_id"] +"-[" + self.task_response_list[index]["status_code"] + ']-' + self.task_response_list[index]["name"] )
+            self.list_request_list.insert(END, 'API-' + str(self.task_response_list[index]["id"]) +"-[" + self.task_response_list[index]["status_code"] + ']-' + self.task_response_list[index]["name"] )
         
 
     def write_task(self):                                         # 将任务保存到文件
