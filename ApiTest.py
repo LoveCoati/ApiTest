@@ -473,7 +473,7 @@ class Main:
         self.request_id_value = StringVar()
         self.cv_left = Canvas(self.root, height=600, width=1000, bg=self.background)
         self.cv_task = Canvas(self.root, height=450, width=1000, scrollregion=(0,0,210,2100), bg=self.background)
-        self.api_list = Listbox(self.root, height=23, width = 79, bg= self.background, fg = self.foreground, font=("宋体, 14"))
+        self.api_list = Listbox(self.root, height=23, width = 77, bg= self.background, fg = self.foreground, font=("宋体, 14"))
         self.scrollbar = Scrollbar(self.root,orient='vertical')
         self.api_list["yscrollcommand"] = self.scrollbar.set
         self.scrollbar["command"]=self.api_list.yview
@@ -486,7 +486,7 @@ class Main:
         self.scrollbar_task["command"]=self.list_task_list.yview
         self.list_task_list.bind('<Double-Button-1>', self.show_task_response_info)
 
-        self.list_request_list = Listbox(self.root, height=27, width = 48, bg= self.background, fg = self.foreground, font=("宋体, 14"))
+        self.list_request_list = Listbox(self.root, height=26, width = 48, bg= self.background, fg = self.foreground, font=("宋体, 14"))
         self.scrollbar_request = Scrollbar(self.root,orient='vertical')
         self.list_request_list["yscrollcommand"] = self.scrollbar_request.set
         self.scrollbar_request["command"]=self.list_request_list.yview
@@ -1008,10 +1008,10 @@ class Main:
         self.cv_left.create_line(205,3,1000,3,width=5, fill=self.foreground)
         self.cv_left.create_line(205,50,1000,50,width=5, fill=self.foreground)
         self.cv_left.create_line(490,0,490,50,width=16, fill=self.foreground)
-        self.cv_left.create_window(206,54, anchor=NW, window=self.list_task_list)
-        self.cv_left.create_window(482,54 , anchor=NW, window=self.scrollbar_task, height=550)
-        self.cv_left.create_window(500,54, anchor=NW, window=self.list_request_list)
-        self.cv_left.create_window(984,54 , anchor=NW, window=self.scrollbar_request, height=550)
+        self.cv_left.create_window(206,55, anchor=NW, window=self.list_task_list)
+        self.cv_left.create_window(482,55 , anchor=NW, window=self.scrollbar_task, height=550)
+        self.cv_left.create_window(500,55, anchor=NW, window=self.list_request_list)
+        self.cv_left.create_window(984,55 , anchor=NW, window=self.scrollbar_request, height=550)
         self.cv_left.create_window(500,580 , anchor=NW, window=self.scrollbar_request_x, width=484)
         if self.taks_start_flag:
             self.cv_left.create_window(215,15,anchor=NW, window=self.button_task_pause)
